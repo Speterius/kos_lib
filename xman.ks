@@ -51,11 +51,21 @@ function xMan {
         
             set maxAcceleration to getMaxAcceleration().
             set throttleSetting to min(mNode:deltav:mag/maxAcceleration, 1).
+
+            if mNode:deltav:mag < 0.01 {
+                    break.
+                }
+
+            if mNode:deltav:mag < 0.1 {
+                print "finalizing burn...".
+                wait until vdot(v0, mNode:deltav) < 0.5.
+                break.
+            }
         }
 
         // Finish burn
         lock throttle to 0.
-        print "Finishing burn with dv left: __ " + mNode:deltav:mag + "__ .".
+        print "Finished burn with dv left: __ " + mNode:deltav:mag + "__ .".
 
         // Release control.
         unlock steering.
