@@ -1,4 +1,3 @@
-
 set altradar_offset to alt:radar.
 
 main().

@@ -1,13 +1,8 @@
 // Manoeuvre node executor
 
-main().
+xman().
 
-function main {
-    clearScreen.
-    xMan().
-}
-
-function xMan {
+local function xMan {
 
     // Check if we have a node in queue.
     if not hasNode {
@@ -21,7 +16,7 @@ function xMan {
         set v0 to mNode:deltav.
 
         // Parameters:
-        set pointingTimeout to 10.              // seconds
+        set pointingTimeout to 15.              // seconds
         set pointingAngleTolerance to 2.5.      // degrees
         set warpExitTimeBuffer to 2.            // seconds
         set burnAngleTolerance to 2.            // degrees
@@ -50,7 +45,13 @@ function xMan {
         until isManoeuvreComplete(mNode, v0, burnAngleTolerance) {
         
             set maxAcceleration to getMaxAcceleration().
-            set throttleSetting to min(mNode:deltav:mag/maxAcceleration, 1).
+
+            if maxAcceleration <= 0.0 {
+                wait until stage:ready.
+                stage.
+            } else {
+                set throttleSetting to min(mNode:deltav:mag/maxAcceleration, 1).
+            }
 
             if mNode:deltav:mag < 0.01 {
                     break.
@@ -109,7 +110,10 @@ function isManoeuvreComplete {
     parameter startVector.
     parameter toleranceAngle.
 
-    return vAng(startvector, manoeuvreNode:burnvector) > toleranceAngle.
+    set angleCheck to vAng(startvector, manoeuvreNode:burnvector) > toleranceAngle.
+    set magnitudeCheck to manoeuvreNode:burnvector:mag < 0.2.
+
+    return angleCheck and magnitudeCheck.
 }
 
 function estimateBurnTime {

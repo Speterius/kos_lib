@@ -1,109 +1,72 @@
-print "running __launch__.ks__ script".
+// Launch to altitude and heading.
+print "Running < launch2.ks > ".
 
-parameter targetAltitude.
-parameter targetHeading.
+parameter targetAltitude is 90_000.
+parameter targetHeading is 90.
 parameter turnEndAltitude is 55_000.
 parameter turnExponent is 1.3.
 
-// Count down from 3:
-from {local COUNTDOWN is 3.} until COUNTDOWN = 0 step {set COUNTDOWN to COUNTDOWN - 1.} do {
-    HUDTEXT(COUNTDOWN, 0.6, 2, 36, RED, true).
-    wait 1.0.
+doCountdown().
+launch().
+
+local function doCountdown {
+    from {local COUNTDOWN is 3.} until COUNTDOWN = 0 step {set COUNTDOWN to COUNTDOWN - 1.} do {
+        HUDTEXT(COUNTDOWN, 0.6, 2, 36, RED, true).
+        wait 1.0.
+    }
+    HUDTEXT("Liftoff!", 1, 2, 20, GREEN, true).
 }
-HUDTEXT("Liftoff!", 1, 2, 20, GREEN, true).
 
-// Do not let go of control until we are done with our launch
-set done to false.
-set ascending to true.
-set executing_node to false.
-
-// Keep staging logic preserved:
 function doSafeStage{
+    print "Staging.".
     wait until stage:ready.
     stage.
 }
 
-lock should_stage to (ship:maxthrust = 0 and stage:number <> 0).
-when should_stage then {
-    print "Staging".
-    doSafeStage().
-    preserve.
-}.
-
-// Ascent profile flight phase:
-// set turnEndAltitude to 55_000.
-// set turnExponent to 1.3.
-lock ascentPitch to (90 * (1 - (altitude / turnEndAltitude) ^ turnExponent)).
-when altitude <= turnEndAltitude and ascending then {
-    lock steering to heading(targetHeading, ascentPitch).
-    preserve.
-}.
-
-when altitude > turnEndAltitude and not executing_node and ascending then {
-    lock steering to heading(targetHeading, 0.0).
-    preserve.
+function ascentProfile {
+    return 90 * (1 - (altitude / turnEndAltitude) ^ turnExponent).
 }
 
-// Coast flight phase:
-// set targetAltitude to 100_000.
-when apoapsis >= targetAltitude then {
-    print "Target apoapsis reached.".
-    set current_heading to ship:prograde.
-    lock throttle to 0.
-    lock steering to current_heading.
-    set ascending to false.
-}.
+local function launch {
 
-// Node creation:
-when altitude >= 75_000 and not ascending then {
-    print "Left the Atmosphere.".
-    lock steering to ship:velocity:orbit.
-    set target_speed to sqrt(ship:body:mu / (targetAltitude + ship:body:radius)).
-    print "Target speed is :" + round(target_speed).
+    lock throttle to 1.
+    lock steering to up.
+    sas off.
 
-    // Node at the apopasis:
-    set time_nd to time + eta:apoapsis.
-    set speed_at_apoapsis to velocityAt(ship, time_nd):orbit:mag.
-    set dv to (target_speed - speed_at_apoapsis).
+    lock shouldStage to (ship:maxthrust = 0 and stage:number <> 0).
+    set raisingApoapsis to true.
+    set done to false.
 
-    set nd to node(time_nd, 0, 0, dv).
-    add nd.
-
-    set executing_node to true.
-    set v0 to nd:deltav.
-}
-
-// Node execution:
-when executing_node then {
-    set nd to nextNode.
-    set np to nd:deltav.
-    lock steering to np.
-
-    // Quick estimate of burn time
-    set max_acc to ship:maxthrust/ship:mass.
-    set burn_duration to nd:deltav:mag / max_acc.
-    wait until vang(np, ship:facing:vector) < 5.
-    wait until nd:eta <= (burn_duration / 2).
-
-    // Do the burn:
-    set throttle_setting to min(nd:deltav:mag/max_acc, 1).
-    lock throttle to throttle_setting.
-
-    // Check for burn end:
-    if vdot(v0, nd:deltav) < 0 {
-        print "End burn, remain dv " + round(nd:deltav:mag,1) + "m/s, vdot: " + round(vdot(v0, nd:deltav), 1).
-        lock throttle to 0.
-        set executing_node to false.
-        set done to true.
-        remove nd.
-        sas on.
-        unlock steering.
-        unlock throttle.
+    when shouldStage then {
+        doSafeStage().
+        preserve.
     }
 
-    preserve.
+    when altitude < turnEndAltitude then {
+        lock steering to heading(targetHeading, ascentProfile()).
+        preserve.
+    }
+
+    // Once we reach the profile's end we lock the steering to horizontal.
+    when altitude > turnEndAltitude and raisingApoapsis then {
+        print "Ascent profile finished.".
+        lock steering to heading(targetHeading, 0.0).
+    }
+
+    when apoapsis >= targetAltitude then {
+        print "Target apoapsis reached.".
+        lock throttle to 0.
+        lock steering to velocity:orbit:normalized.
+        set raisingApoapsis to false.
+    }
+
+    when altitude > 70_000 and not raisingApoapsis then {
+        print "Left the Atmosphere. Adding manoeuvre node.".
+
+        run circ_at_apo.
+
+        set done to true.
+    }
+
+    wait until done.
 }
-
-
-lock throttle to 1.
-wait until done.
