@@ -61,6 +61,14 @@ local function launch {
     }
 
     when altitude > 70_000 and not raisingApoapsis then {
+        
+        print "Left the Atmosphere. Deploy fairings.".
+        set p to ship:partsnamed("fairingSize2")[0].
+        local decoupler is p:getmodule("moduleproceduralfairing"). 
+        if decoupler:hasevent("deploy") {
+                decoupler:doevent("deploy").
+            }
+
         print "Left the Atmosphere. Adding manoeuvre node.".
 
         run circ_at_apo.

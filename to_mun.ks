@@ -3,7 +3,7 @@ main().
 local function main {
 
     // 1) Launch
-    run launch(120_000, 90, 35_000, 1.15).
+    run launch(120_000, 90, 33_000, 1.15).
 
     // 2) Deploy Solar panels and antennas
     print "Activating solar panels and antennas".
@@ -34,14 +34,13 @@ local function main {
 
     // Get the transfer orbit
     set munTargetPeri to 500_000.
-    findMunarTransfer(0.02, 500_000).
+    findMunarTransfer(0.005, 500_000).
     run xman.
 
     // confirm burn accuracy:
     set orbitTolerance to 5_000.
     print "Mun encounter periapsis: " + orbit:nextpatch:periapsis.
     print "Is within tolerance: " + abs(orbit:nextpatch:periapsis - munTargetPeri) < orbitTolerance.
-
 
     // todo: fine tune closest approach to a close encounter.
 
@@ -64,7 +63,7 @@ local function findMunarTransfer {
     local options is lexicon("create_maneuver_nodes", "first", 
                             "verbose", true,
                             "search_interval", samplingTime * ship:orbit:period,
-                            "search_duration", 1 * ship:orbit:period,
+                            "search_duration", 3 * ship:orbit:period,
                             "final_orbit_periapsis", targetPeriapsis,
                             "final_orbit_orientation", "prograde",
                             "final_orbit_type", "circular").
