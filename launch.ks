@@ -1,31 +1,4 @@
-// Launch to altitude and heading.
-print "Running < launch2.ks > ".
-
-parameter targetAltitude is 90_000.
-parameter targetHeading is 90.
-parameter turnEndAltitude is 55_000.
-parameter turnExponent is 1.3.
-
-doCountdown().
 launch().
-
-local function doCountdown {
-    from {local COUNTDOWN is 3.} until COUNTDOWN = 0 step {set COUNTDOWN to COUNTDOWN - 1.} do {
-        HUDTEXT(COUNTDOWN, 0.6, 2, 36, RED, true).
-        wait 1.0.
-    }
-    HUDTEXT("Liftoff!", 1, 2, 20, GREEN, true).
-}
-
-function doSafeStage{
-    print "Staging.".
-    wait until stage:ready.
-    stage.
-}
-
-function ascentProfile {
-    return 90 * (1 - (altitude / turnEndAltitude) ^ turnExponent).
-}
 
 local function launch {
 
