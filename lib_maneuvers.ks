@@ -1,5 +1,5 @@
 // Run xman to get access to ExecuteManeuver().
-run xman.
+run once lib_xman.
 
 function CircularizeAtPeri {
     // Circularize the orbit at the next periapsis.

@@ -1,12 +1,14 @@
-run maneuvers.
+run once lib_maneuvers.
 
 function LaunchToOrbit{
-    parameter targetAltitude is 90_000.
-    parameter targetHeading is 90.
-    parameter turnEndAltitude is 55_000.
-    parameter turnExponent is 1.3. 
+    // Launch to orbit: follow ascent profile, coast until apoapses and circularize.
 
-    doCountdown().
+    parameter targetAltitude is 100_000.
+    parameter targetHeading is 90.
+    parameter turnEndAltitude is 45_000.
+    parameter turnExponent is 1.2. 
+
+    DoCountdown().
 
     // Take control
     lock throttle to 1.
@@ -17,9 +19,14 @@ function LaunchToOrbit{
     lock shouldStage to (ship:maxthrust = 0 and stage:number <> 0).
     local raisingApoapsis to true.
     local done to false.
-
     when shouldStage then {
-        doSafeStage().
+        DoSafeStage().
+        preserve.
+    }
+
+    // Follow Ascent Profile
+    when altitude < turnEndAltitude then {
+        lock steering to heading(targetHeading, AscentProfile(turnEndAltitude, turnExponent)).
         preserve.
     }
 
@@ -29,6 +36,7 @@ function LaunchToOrbit{
         lock steering to heading(targetHeading, 0.0).
     }
 
+    // Once we hit apoapsis target start coasting.
     when apoapsis >= targetAltitude then {
         print "Target apoapsis reached.".
         lock throttle to 0.
@@ -36,9 +44,18 @@ function LaunchToOrbit{
         set raisingApoapsis to false.
     }
 
+    // Once we are in vacuum and have started coasting.
+    when altitude > 70_000 and not raisingApoapsis then {
+        print "Left the Atmosphere.".
+        DeployFairing().
+        CircularizeAtApo().
+        set done to true.
+    }
+
+    wait until done.
 }
 
-function doSafeStage{
+function DoSafeStage{
     print "Staging.".
     wait until stage:ready.
     stage.
@@ -52,9 +69,21 @@ local function DoCountdown{
     HUDTEXT("Liftoff!", 1, 2, 20, GREEN, true).
 }
 
-local function ascentProfile {
+local function AscentProfile {
     parameter turnEndAltitude.
     parameter turnExponent.
 
     return 90 * (1 - (altitude / turnEndAltitude) ^ turnExponent).
+}
+
+local function DeployFairing {
+    print "Deploying fairing.".
+
+    // todo: generalize for all fairings and make sure there is no error when there is no part like this 
+    set p to ship:partsnamed("fairingSize2")[0].
+    local decoupler is p:getmodule("moduleproceduralfairing"). 
+
+    if decoupler:hasevent("deploy") {
+            decoupler:doevent("deploy").
+    }
 }
