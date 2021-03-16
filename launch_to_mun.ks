@@ -53,8 +53,8 @@ local function VerifyEncounter {
     // Is the next encounter really the Mun?
     local doesEncounterMun to false.
 
-    if nextNode:orbit:hasnextpatch {
-        local nextBody to nextNode:orbit:nextpatch:body.
+    if orbit:hasnextpatch {
+        local nextBody to orbit:nextpatch:body.
         set doesEncounterMun to nextBody = mun.
     }
 

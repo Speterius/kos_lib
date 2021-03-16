@@ -37,8 +37,8 @@ function Land {
 }
 
 local function DistanceToGround {
-    // return altitude - body:geopositionOf(ship:position):terrainHeight - 4.
-    return ship:bounds:bottomaltradar.
+    return altitude - body:geopositionOf(ship:position):terrainHeight - 4.
+    // return ship:bounds:bottomaltradar.
 }
 
 local function StoppingDistance {
