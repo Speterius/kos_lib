@@ -11,6 +11,8 @@ copypath("0:/lib_land.ks", "").
 copypath("0:/lib_utils.ks", "").
 
 // Copy main script
+copypath("0:/launch_to_mun.ks", "").
+copypath("0:/land_on_mun.ks", "").
 copypath("0:/to_mun.ks", "").
 
 // Copy and compile RSVP files from the archive:

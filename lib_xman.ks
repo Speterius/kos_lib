@@ -1,5 +1,7 @@
 function ExecuteManeuver {
 
+    parameter shouldWarp is true.
+
     // Check if we have a node in queue.
     if not hasNode {
         print "No Node to execute!".
@@ -12,9 +14,9 @@ function ExecuteManeuver {
         local v0 to mNode:deltav.
 
         // Parameters:
-        local pointingTimeout to 15.              // seconds
+        local pointingTimeout to 16.              // seconds
         local pointingAngleTolerance to 2.5.      // degrees
-        local warpExitTimeBuffer to 2.            // seconds
+        local warpExitTimeBuffer to 6.            // seconds
         local burnAngleTolerance to 2.            // degrees
 
         // Lock Steering to burn vector
@@ -27,7 +29,9 @@ function ExecuteManeuver {
         local burnStartTimeStamp to time:seconds + mNode:eta - (burnDuration / 2) - warpExitTimeBuffer.
 
         // Do the warping:
-        kuniverse:timewarp:warpto(burnStartTimeStamp).
+        if shouldWarp {
+            kuniverse:timewarp:warpto(burnStartTimeStamp).
+        }
 
         // Wait out the buffer:
         wait until mNode:eta <= (burnDuration / 2).
@@ -36,6 +40,7 @@ function ExecuteManeuver {
         print "Starting burn".
         local throttleSetting to 1.
         lock throttle to throttleSetting.
+        lock steering to mNode:burnvector.
 
         // Set throttle setting to max and a near linear cutoff at the end.
         until IsManeuverComplete(mNode, v0, burnAngleTolerance) {
@@ -68,7 +73,6 @@ function ExecuteManeuver {
         // Release control.
         unlock steering.
         unlock throttle.
-        sas on.
         remove mNode.
     }
 }

@@ -80,7 +80,7 @@ function KillSurfaceVelocity {
     parameter percentage is 0.99.
     parameter secondsDelay is 5.0.
 
-    local nd to node(time + secondsDelay, 0, 0, -percentage * ship:velocity:surface:mag.v).
+    local nd to node(time + secondsDelay, 0, 0, -percentage * ship:velocity:surface:mag).
     add nd.
     ExecuteManeuver().
 }

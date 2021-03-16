@@ -47,7 +47,7 @@ function LaunchToOrbit{
     // Once we are in vacuum and have started coasting.
     when altitude > 70_000 and not raisingApoapsis then {
         print "Left the Atmosphere.".
-        DeployFairing().
+        // DeployFairing().
         CircularizeAtApo().
         set done to true.
     }
